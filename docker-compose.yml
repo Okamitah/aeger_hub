@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  frontend:
+    build: ./front
+    ports:
+      - "80:80"
+  backend:
+    build: ./back
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
