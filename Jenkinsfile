@@ -9,29 +9,43 @@ pipeline {
         }
 
         stage('Build Frontend') {
-            steps {
-                dir('frontend') {
-                    sh 'npm ci --omit=dev'
-                    sh 'npm run build'
+            agent {
+                docker {
+                    image 'node:20.18.0-alpine'
+                    args '-v $HOME/.npm:/root/.npm'
                 }
+            }
+            steps {
+                sh 'npm ci --omit=dev'
+                sh 'npm run build'
+                stash name: 'frontend-dist', includes: 'dist/**'
             }
         }
 
         stage('Build Backend') {
-            steps {
-                dir('backend') {
-                    sh 'mvn clean package -DskipTests'
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'
+                    args '-v $HOME/.m2:/root/.m2'
                 }
+            }
+            steps {
+                sh 'mvn clean package -DskipTests'
+                stash name: 'backend-jar', includes: 'target/*.jar'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'echo "Stopping old containers..."'
+                unstash 'frontend-dist'
+                unstash 'backend-jar'
+
+                sh 'mkdir -p frontend/dist backend/target'
+                sh 'cp -r dist/* frontend/dist/'
+                sh 'cp target/*.jar backend/target/'
+
                 sh 'docker-compose down --remove-orphans || true'
-                sh 'echo "Starting new containers..."'
-                sh 'docker-compose up -d --build'
-                sh 'echo "Deployment complete!"'
+                sh 'docker-compose up -d'
             }
         }
     }
