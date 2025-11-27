@@ -12,7 +12,6 @@ pipeline {
             agent {
                 docker {
                     image 'node:20.18.0-alpine'
-                    #args '-v $HOME/.npm:/root/.npm'
                 }
             }
             steps {
