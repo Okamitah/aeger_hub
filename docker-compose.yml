@@ -1,12 +1,35 @@
-version: '3.8'
 services:
-  frontend:
-    build: ./front
-    ports:
-      - "80:80"
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: aeger
+      POSTGRES_PASSWORD: aeger0304
+      POSTGRES_DB: aegerhub
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
   backend:
     build: ./back
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: aegerhub
+      DB_USER: aeger
+      DB_PASS: aeger0304
+    depends_on:
+      - db
+
+  frontend:
+    build: ./front
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:  
