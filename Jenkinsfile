@@ -17,7 +17,7 @@ pipeline {
             }
             steps {
                 dir('front') {
-                    sh 'npm ci --omit=dev'
+                    sh 'npm ci'
                     sh 'npm run build'
                 }
                 stash name: 'frontend-dist', includes: 'front/dist/**'
