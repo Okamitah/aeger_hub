@@ -12,6 +12,7 @@ pipeline {
             agent {
                 docker {
                     image 'node:20.19.0-alpine'
+		    args '-e HOME=/tmp'
                 }
             }
             steps {
