@@ -16,9 +16,11 @@ pipeline {
                 }
             }
             steps {
-                sh 'npm ci --omit=dev'
-                sh 'npm run build'
-                stash name: 'frontend-dist', includes: 'dist/**'
+                dir('front') {
+                    sh 'npm ci --omit=dev'
+                    sh 'npm run build'
+                }
+                stash name: 'frontend-dist', includes: 'front/dist/**'
             }
         }
 
@@ -30,8 +32,10 @@ pipeline {
                 }
             }
             steps {
-                sh 'mvn clean package -DskipTests'
-                stash name: 'backend-jar', includes: 'target/*.jar'
+                dir('back') {
+                    sh 'mvn clean package -DskipTests'
+                }
+                stash name: 'backend-jar', includes: 'back/target/*.jar'
             }
         }
 
@@ -40,12 +44,14 @@ pipeline {
                 unstash 'frontend-dist'
                 unstash 'backend-jar'
 
-                sh 'mkdir -p frontend/dist backend/target'
-                sh 'cp -r dist/* frontend/dist/'
-                sh 'cp target/*.jar backend/target/'
+                sh '''
+                    mkdir -p front/dist back/target
+                    cp -r front/dist/* front/dist/ 2>/dev/null || true
+                    cp back/target/*.jar back/target/ 2>/dev/null || true
+                '''
 
                 sh 'docker-compose down --remove-orphans || true'
-                sh 'docker-compose up -d'
+                sh 'docker-compose up -d --build'
             }
         }
     }
