@@ -11,7 +11,7 @@ pipeline {
         stage('Build Frontend') {
             agent {
                 docker {
-                    image 'node:20.19.0-alpine'
+                    image 'node:20.19.0'
 		    args '-e HOME=/tmp'
                 }
             }
