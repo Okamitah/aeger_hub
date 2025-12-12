@@ -15,13 +15,19 @@ public class App {
         server.createContext("/", new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
+                String requestMethod = exchange.getRequestMethod();
+                String requestURI = exchange.getRequestURI().toString();
+                System.out.println("Received " + requestMethod + " request to " + requestURI);
+
                 String response = "{\"status\":\"ok\",\"message\":\"Backend is running!\"}";
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, response.getBytes().length);
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
                 os.close();
-            }
+
+                System.out.println("Sent response to " + requestURI);
+            } 
         });
 
         System.out.println("Backend started on port 8080...");
