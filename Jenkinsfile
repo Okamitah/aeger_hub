@@ -1,18 +1,32 @@
 pipeline {
     agent any
 
+    environment {
+        FRONT_IMAGE = "okamitah/aeger-hub-deploy-frontend"
+        BACK_IMAGE  = "okamitah/aeger-hub-deploy-backend"
+        INTEGRATION_USER = "toto"
+        INTEGRATION_IP = "172.31.249.107"
+    }
+
     stages {
+
         stage('Clone') {
             steps {
-                checkout scm
+                checkout([$class: 'GitSCM',
+                    branches: [[name: "*/main"]],
+                    userRemoteConfigs: [[
+                        credentialsId: 'github-creds',
+                        url: 'https://github.com/Okamitah/aeger_hub'
+                    ]]
+                ])
             }
         }
 
-        stage('Build Frontend') {
+        stage('Build Frontend Assets') {
             agent {
                 docker {
                     image 'node:20.19.0'
-		    args '-e HOME=/tmp'
+                    args '-e HOME=/tmp'
                 }
             }
             steps {
@@ -20,11 +34,16 @@ pipeline {
                     sh 'npm ci'
                     sh 'npm run build'
                 }
-                stash name: 'frontend-dist', includes: 'front/dist/**'
             }
         }
 
-        stage('Build Backend') {
+        stage('Build Frontend Docker Image') {
+            steps {
+                sh 'docker build -t $FRONT_IMAGE:latest front/'
+            }
+        }
+
+        stage('Build Backend JAR') {
             agent {
                 docker {
                     image 'maven:3.9.6-eclipse-temurin-17'
@@ -35,24 +54,54 @@ pipeline {
                 dir('back') {
                     sh 'mvn clean package -DskipTests'
                 }
-                stash name: 'backend-jar', includes: 'back/target/*.jar'
             }
         }
 
-        stage('Deploy') {
+        stage('Build Backend Docker Image') {
             steps {
-                unstash 'frontend-dist'
-                unstash 'backend-jar'
+                sh 'docker build -t $BACK_IMAGE:latest back/'
+            }
+        }
 
-                sh '''
-                    mkdir -p front/dist back/target
-                    cp -r front/dist/* front/dist/ 2>/dev/null || true
-                    cp back/target/*.jar back/target/ 2>/dev/null || true
-                '''
+        stage('Push Images to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials-id',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
 
-                sh 'docker-compose down --remove-orphans || true'
-                sh 'docker-compose up -d --build'
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+
+                    sh 'docker push $FRONT_IMAGE:latest'
+                    sh 'docker push $BACK_IMAGE:latest'
+                }
+            }
+        }
+
+        stage('Deploy to Integration VM') {
+            steps {
+                sshagent(['integration-server-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no $INTEGRATION_USER@$INTEGRATION_IP '
+                            docker pull $FRONT_IMAGE:latest
+                            docker pull $BACK_IMAGE:latest
+
+                            docker stop frontend || true
+                            docker rm frontend || true
+                            docker stop backend || true
+                            docker rm backend || true
+
+                            docker run -d --name backend -p 8080:8080 $BACK_IMAGE:latest
+
+                            docker run -d --name frontend -p 80:80 \
+                                -e API_URL=http://$INTEGRATION_IP:8080 \
+                                $FRONT_IMAGE:latest
+                        '
+                    """
+                }
             }
         }
     }
 }
+
