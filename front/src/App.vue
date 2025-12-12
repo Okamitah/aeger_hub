@@ -10,7 +10,6 @@ onMounted(async () => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     console.log('Backend response:', data)
-    // Optional: show it in UI later
   } catch (err) {
     console.error('Failed to reach backend:', err)
   }
@@ -19,10 +18,9 @@ onMounted(async () => {
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
 
     <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+      <HelloWorld msg="Hello World!" />
     </div>
   </header>
 
@@ -34,11 +32,6 @@ onMounted(async () => {
 <style scoped>
 header {
   line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
 }
 
 @media (min-width: 1024px) {
