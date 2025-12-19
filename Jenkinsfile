@@ -29,11 +29,23 @@ pipeline {
         }
 
         stage('Build Frontend Assets') {
+            agent {
+                docker {
+                    image 'node:20.19.0'
+                    args '-e HOME=/tmp'
+                }
+            }
             steps {
                 dir('front') {
-                    sh 'rm -rf dist'
-                    sh 'npm ci --prefer-offline --no-audit --progress=false'
-                    sh 'npm run build'
+                    sh 'rm -rf dist' 
+                    
+                    sh 'npm ci'
+                    
+                    sh 'export NODE_OPTIONS="--max_old_space_size=1024" && npm run build'
+                }
+
+                script {
+                    sh 'docker build -t $FRONT_IMAGE:latest -f front/Dockerfile .'
                 }
             }
         }
