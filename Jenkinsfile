@@ -9,6 +9,12 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace & Docker') {
+            steps {
+                sh 'docker system prune -af || true' 
+            }
+        }
+
         stage('Clone') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -23,7 +29,6 @@ pipeline {
 
         stage('Build Frontend Docker Image') {
             steps {
-                // This command now compiles the code internally
                 sh 'docker build -t $FRONT_IMAGE:latest front/'
             }
         }
