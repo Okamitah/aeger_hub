@@ -100,7 +100,7 @@ pipeline {
                             docker stop backend || true
                             docker rm backend || true
 
-                            docker run -d --name backend -p 8080:8080 
+                            docker run -d --name backend -p 8080:8080 $BACK_IMAGE:latest
 
                             docker run -d --name frontend -p 80:80 \
                                 -e API_URL=http://$INTEGRATION_IP:8080 \
