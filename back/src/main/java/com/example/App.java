@@ -30,6 +30,18 @@ public class App {
             } 
         });
 
+        server.createContext("/api/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                String response = "{\"status\":\"ok\",\"message\":\"Backend is running!\"}";
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, response.getBytes().length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
+                }
+            }
+        });
+
         System.out.println("Backend started on port 8080...");
         server.setExecutor(null);
         server.start();
