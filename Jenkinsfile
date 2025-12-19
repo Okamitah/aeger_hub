@@ -9,9 +9,9 @@ pipeline {
     }
 
     stages {
-        stage('Clean Workspace & Docker') {
+        stage('Clean Workspace') {
             steps {
-                sh 'docker system prune -af || true' 
+                sh 'docker system prune -af || true'
             }
         }
 
@@ -27,9 +27,36 @@ pipeline {
             }
         }
 
+        // 2. BUILD STAGE (Runs in a temporary Node container)
+        stage('Build Frontend Assets') {
+            agent {
+                docker {
+                    image 'node:20.19.0'
+                    // Mount temp to avoid permission issues
+                    args '-e HOME=/tmp'
+                }
+            }
+            steps {
+                dir('front') {
+                    // Delete old dist folder to guarantee fresh build
+                    sh 'rm -rf dist' 
+                    
+                    sh 'npm ci'
+                    
+                    // MEMORY FIX: Limit Node to 1GB RAM to prevent "Bus error"
+                    // STALE FIX: "tsc" is removed to save RAM, just running vite build
+                    sh 'export NODE_OPTIONS="--max_old_space_size=1024" && npm run build'
+                }
+            }
+        }
+
+        // 3. PACKAGE STAGE (Takes the 'dist' from above and puts it in Nginx)
         stage('Build Frontend Docker Image') {
             steps {
-                sh 'docker build -t $FRONT_IMAGE:latest front/'
+                dir('front') {
+                    // --no-cache: Forces Docker to look at the new 'dist' folder
+                    sh 'docker build --no-cache -t $FRONT_IMAGE:latest .'
+                }
             }
         }
 
