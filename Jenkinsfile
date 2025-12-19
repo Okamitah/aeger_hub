@@ -101,7 +101,13 @@ pipeline {
                             docker stop backend || true
                             docker rm backend || true
 
-                            docker run -d --name backend -p 8080:8080 $BACK_IMAGE:latest
+                            docker run -d --name backend -p 8080:8080 \
+                                -e DB_HOST=172.31.249.107 \
+                                -e DB_PORT=5432 \
+                                -e DB_NAME=aeger_hub \
+                                -e DB_USER=aeger \
+                                -e DB_PASSWORD=pass \
+                                $BACK_IMAGE:latest
 
                             docker run -d --name frontend -p 80:80 \
                                 -e API_URL=http://$INTEGRATION_IP:8080 \
