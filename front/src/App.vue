@@ -4,8 +4,9 @@ import { onMounted } from 'vue'
 
 onMounted(async () => {
   try {
-    console.log('Fetching from backend via /api/...')
-    const res = await fetch('/api/')
+    const backendUrl = 'http://172.31.249.107:8080/api/'
+    console.log('Fetching from backend:', backendUrl)
+    const res = await fetch(backendUrl)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     console.log('Backend response:', data)
