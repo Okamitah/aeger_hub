@@ -17,7 +17,6 @@ pipeline {
 
         stage('Clone') {
             steps {
-                deleteDir()
                 checkout([$class: 'GitSCM',
                     branches: [[name: "*/main"]],
                     userRemoteConfigs: [[
@@ -43,29 +42,13 @@ pipeline {
                     
                     sh 'export NODE_OPTIONS="--max_old_space_size=1024" && npm run build'
                 }
-
-                script {
-                    sh 'docker build -t $FRONT_IMAGE:latest -f front/Dockerfile .'
-                }
-            }
-        }
-
-        stage('Debug: Check dist content') {
-            steps {
-                dir('front') {
-                    sh 'echo "=== dist/ files ==="'
-                    sh 'ls -la dist/'
-                    sh 'echo "=== index.html head ==="'
-                    sh 'head -n 5 dist/index.html'
-                    sh 'echo "=== Check for HelloWorld ==="'
-                    sh 'grep -q "HelloWorld" dist/index.html && echo "✅ Found HelloWorld" || echo "❌ HelloWorld NOT found!"'
-                }
             }
         }
 
         stage('Build Frontend Docker Image') {
             steps {
                 dir('front') {
+                    // --no-cache: Forces Docker to look at the new 'dist' folder
                     sh 'docker build --no-cache -t $FRONT_IMAGE:latest .'
                 }
             }
