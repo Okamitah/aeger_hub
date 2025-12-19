@@ -9,7 +9,6 @@ pipeline {
     }
 
     stages {
-
         stage('Clone') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -22,23 +21,9 @@ pipeline {
             }
         }
 
-        stage('Build Frontend Assets') {
-            agent {
-                docker {
-                    image 'node:20.19.0'
-                    args '-e HOME=/tmp'
-                }
-            }
-            steps {
-                dir('front') {
-                    sh 'npm ci'
-                    sh 'npm run build'
-                }
-            }
-        }
-
         stage('Build Frontend Docker Image') {
             steps {
+                // This command now compiles the code internally
                 sh 'docker build -t $FRONT_IMAGE:latest front/'
             }
         }
@@ -70,9 +55,7 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-
                     sh 'docker push $FRONT_IMAGE:latest'
                     sh 'docker push $BACK_IMAGE:latest'
                 }
@@ -104,4 +87,3 @@ pipeline {
         }
     }
 }
-
