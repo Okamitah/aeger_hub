@@ -110,6 +110,7 @@ pipeline {
                         $BACK_IMAGE:latest
 
                         docker run -d --name frontend --network aeger-net -p 80:80 \\
+                        --add-host=host.docker.internal:host-gateway \\
                         $FRONT_IMAGE:latest
                         '
                         """
