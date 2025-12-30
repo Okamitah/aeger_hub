@@ -3,7 +3,7 @@
 
     onMounted(async () => {
       try {
-        const backendUrl = 'http://172.31.249.107:8080/api/'
+        const backendUrl = '/api'
         console.log('Fetching from backend:', backendUrl)
         const res = await fetch(backendUrl)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)

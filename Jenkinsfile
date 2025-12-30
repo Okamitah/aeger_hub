@@ -92,21 +92,19 @@ pipeline {
                 sshagent(['integration-server-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no $INTEGRATION_USER@$INTEGRATION_IP '
-                            docker pull $FRONT_IMAGE:latest
-                            docker pull $BACK_IMAGE:latest
+                        docker pull $FRONT_IMAGE:latest
+                        docker pull $BACK_IMAGE:latest
 
-                            docker stop frontend || true
-                            docker rm frontend || true
-                            docker stop backend || true
-                            docker rm backend || true
+                        docker stop frontend backend 2>/dev/null || true
+                        docker rm frontend backend 2>/dev/null || true
 
-                            docker run -d --name backend -p 8080:8080 $BACK_IMAGE:latest
+                        docker run -d --name backend -p 8080:8080 $BACK_IMAGE:latest
 
-                            docker run -d --name frontend -p 80:80 \
-                                -e API_URL=http://$INTEGRATION_IP:8080 \
-                                $FRONT_IMAGE:latest
+                        docker run -d --name frontend -p 80:80 \\
+                        --add-host=host.docker.internal:host-gateway \\
+                        $FRONT_IMAGE:latest
                         '
-                    """
+                        """
                 }
             }
         }
