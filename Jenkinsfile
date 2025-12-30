@@ -92,16 +92,24 @@ pipeline {
                 sshagent(['integration-server-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no $INTEGRATION_USER@$INTEGRATION_IP '
-                        docker pull $FRONT_IMAGE:latest
+                        docker network create aeger-net 2>/dev/null || true
+
                         docker pull $BACK_IMAGE:latest
+                        docker pull $FRONT_IMAGE:latest
 
-                        docker stop frontend backend 2>/dev/null || true
-                        docker rm frontend backend 2>/dev/null || true
+                        docker stop postgres-db backend frontend 2>/dev/null || true
+                        docker rm postgres-db backend frontend 2>/dev/null || true
 
-                        docker run -d --name backend -p 8080:8080 $BACK_IMAGE:latest
+                        docker run -d --name postgres-db --network aeger-net \\
+                        -e POSTGRES_DB=aeger_hub_db \\
+                        -e POSTGRES_USER=aeger \\
+                        -e POSTGRES_PASSWORD=aeger \\
+                        postgres:15
 
-                        docker run -d --name frontend -p 80:80 \\
-                        --add-host=host.docker.internal:host-gateway \\
+                        docker run -d --name backend --network aeger-net -p 8080:8080 \\
+                        $BACK_IMAGE:latest
+
+                        docker run -d --name frontend --network aeger-net -p 80:80 \\
                         $FRONT_IMAGE:latest
                         '
                         """
