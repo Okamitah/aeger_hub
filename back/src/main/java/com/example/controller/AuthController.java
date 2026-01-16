@@ -19,7 +19,7 @@ public class AuthController {
         USER_DB.put("admin", "secret");
     }
 
-    @PostMapping("/login/")
+    @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
