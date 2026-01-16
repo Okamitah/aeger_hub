@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                sh 'docker system prune -af || true'
+                deleteDir()
             }
         }
 
@@ -19,6 +19,11 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM',
                     branches: [[name: "*/main"]],
+                    doClean: true,
+                    extensions: [
+                        [$class: 'CloneOption', depth: 0, noTags: false, reference: ''],
+                        [$class: 'PruneStaleBranch']
+                    ],
                     userRemoteConfigs: [[
                         credentialsId: 'github-creds',
                         url: 'https://github.com/Okamitah/aeger_hub'
@@ -62,7 +67,7 @@ pipeline {
             }
             steps {
                 dir('back') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package -DskipTests -U'
                 }
             }
         }
