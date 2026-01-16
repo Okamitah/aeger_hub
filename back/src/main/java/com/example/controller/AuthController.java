@@ -21,6 +21,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> credentials) {
+
+        System.out.println("Received credentials: " + credentials);
+
         String username = credentials.get("username");
         String password = credentials.get("password");
 
