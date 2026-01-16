@@ -12,7 +12,7 @@ public class ApiController {
     public Map<String, String> health() {
         return Map.of(
             "status", "ok",
-            "message", "Backend is running with Spring Boot + PostgreSQL!"
+            "message", "Backend is running with Spring Boot"
         );
     }
 }

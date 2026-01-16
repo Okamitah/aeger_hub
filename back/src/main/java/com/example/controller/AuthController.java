@@ -6,7 +6,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "http://172.31.249.107"
+})
 public class AuthController {
 
     private static final Map<String, String> USER_DB = new HashMap<>();
