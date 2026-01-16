@@ -59,25 +59,28 @@ onMounted(async () => {
 })
 
 async function handleLogin() {
-  isLoggingIn.value = true
-  loginError.value = ''
-  try {
-    const res = await fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, password: password.value })
-    })
-    const data = await res.json()
-    if (data.success) {
-      isLoggedIn.value = true
-    } else {
-      loginError.value = data.message || 'Login failed'
+    isLoggingIn.value = true
+    loginError.value = ''
+    try {
+        const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: username.value.trim(),
+                password: password.value.trim()
+            })
+        })
+        const data = await res.json()
+        if (data.success) {
+            isLoggedIn.value = true
+        } else {
+            loginError.value = data.message || 'Login failed'
+        }
+    } catch {
+        loginError.value = 'Network error'
+    } finally {
+        isLoggingIn.value = false
     }
-  } catch {
-    loginError.value = 'Network error'
-  } finally {
-    isLoggingIn.value = false
-  }
 }
 
 function logout() {
