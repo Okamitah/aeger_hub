@@ -58,7 +58,7 @@ pipeline {
             }
         }
 
-        stage('Build Backend JAR') {
+        stage('Build Backend JAR') {--no-cache
             agent {
                 docker {
                     image 'maven:3.9.6-eclipse-temurin-17'
@@ -74,7 +74,7 @@ pipeline {
 
         stage('Build Backend Docker Image') {
             steps {
-                sh 'docker build -t $BACK_IMAGE:latest back/'
+                sh 'docker build --no-cache -t $BACK_IMAGE:latest back/'
             }
         }
 
