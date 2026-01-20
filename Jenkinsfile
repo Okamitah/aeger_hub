@@ -107,12 +107,18 @@ pipeline {
                         docker rm postgres-db backend frontend 2>/dev/null || true
 
                         docker run -d --name postgres-db --network aeger-net \\
+                        -v /home/$INTEGRATION_USER/aeger_db_data:/var/lib/postgresql/data \\
                         -e POSTGRES_DB=aeger_hub_db \\
                         -e POSTGRES_USER=aeger \\
                         -e POSTGRES_PASSWORD=aeger \\
                         postgres:15
 
+                        sleep 10
+
                         docker run -d --name backend --network aeger-net -p 8080:8080 \\
+                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/aeger_hub_db \\
+                        -e SPRING_DATASOURCE_USERNAME=aeger \\
+                        -e SPRING_DATASOURCE_PASSWORD=aeger \\
                         $BACK_IMAGE:latest
 
                         docker run -d --name frontend --network aeger-net -p 80:80 \\
