@@ -1,40 +1,38 @@
 package com.example.controller;
 
+import com.example.entity.UserEntity;
+import com.example.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "http://172.31.249.107"
-})
+@CrossOrigin(origins = {"http://localhost:5173", "http://172.31.249.107"})
 public class AuthController {
 
-    private static final Map<String, String> USER_DB = new HashMap<>();
+    private final UserRepository userRepository;
 
-    static {
-        USER_DB.put("user1", "pass1");
-        USER_DB.put("admin", "secret");
+    // Inject the repository (Database Tool)
+    public AuthController(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> credentials) {
-
-        System.out.println("Received credentials: " + credentials);
-
         String username = credentials.get("username");
         String password = credentials.get("password");
 
         Map<String, Object> response = new HashMap<>();
 
-        if (username != null && password != null && 
-            USER_DB.containsKey(username) && 
-            USER_DB.get(username).equals(password)) {
-            
+        // 1. Ask Database: "Do we have a user with this name?"
+        Optional<UserEntity> userInDb = userRepository.findByUsername(username);
+
+        // 2. Check if User exists AND Password matches
+        if (userInDb.isPresent() && userInDb.get().getPassword().equals(password)) {
             response.put("success", true);
-            response.put("message", "Login successful");
+            response.put("message", "Login successful (Validated by PostgreSQL Database!)");
         } else {
             response.put("success", false);
             response.put("message", "Invalid username or password");
