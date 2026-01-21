@@ -18,6 +18,10 @@ public class PatientService {
         this.repo = repo;
     }
 
+    public List<PatientEntity> getAllPatients() {
+        return repo.findAll();
+    }
+
     public PatientEntity createMock() {
         return repo.save(generator.generate());
     }
@@ -29,4 +33,3 @@ public class PatientService {
                 .toList();
     }
 }
-

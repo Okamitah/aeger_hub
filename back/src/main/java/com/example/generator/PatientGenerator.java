@@ -28,9 +28,10 @@ public class PatientGenerator {
         p.setHeightCm(round(height));
         p.setWeightKg(round(weight));
 
-        int athleticism = rng.nextInt(6);
-        p.setAthleticism(athleticism);
 
+        AthleticismLevel athleticismLevel = RandomUtils.pick(AthleticismLevel.values(), rng);
+        p.setAthleticism(athleticismLevel.getLevel());
+        
         p.setSleepQuality(RandomUtils.pick(SleepQuality.values(), rng));
         p.setIllness(RandomUtils.pick(Illness.values(), rng));
 
@@ -39,7 +40,7 @@ public class PatientGenerator {
 
         p.setBpmMax(180 - (p.getAthleticism() * 5) + rng.nextInt(10));
 
-        //p.setName(NameGenerator.randomName(rng));
+        p.setName(NameGenerator.randomName(rng));
 
         return p;
     }

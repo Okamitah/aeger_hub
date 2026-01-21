@@ -8,12 +8,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/patients")
+@CrossOrigin(origins = {"http://localhost:5173", "http://172.31.249.107"})
 public class PatientController {
 
     private final PatientService service;
 
     public PatientController(PatientService service) {
         this.service = service;
+    }
+
+    @GetMapping
+    public List<PatientEntity> getAllPatients() {
+        return service.getAllPatients();
     }
 
     @PostMapping("/mock")
@@ -26,4 +32,3 @@ public class PatientController {
         return service.createMany(count);
     }
 }
-

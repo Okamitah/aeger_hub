@@ -1,3 +1,16 @@
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/AegerHubApplication.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/ApiController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/AuthController.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/PatientController.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/AthleticismLevel.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/Illness.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/PatientEntity.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/Sex.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/SleepQuality.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/UserEntity.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/generator/NameGenerator.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/generator/PatientGenerator.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/repository/PatientRepository.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/repository/UserRepository.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/service/PatientService.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/utils/RandomUtils.java

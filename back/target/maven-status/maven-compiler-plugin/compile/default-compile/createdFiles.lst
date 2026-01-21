@@ -1,3 +1,16 @@
+com/example/generator/NameGenerator.class
 com/example/AegerHubApplication.class
+com/example/entity/Sex.class
+com/example/repository/UserRepository.class
+com/example/entity/AthleticismLevel.class
 com/example/controller/AuthController.class
 com/example/controller/ApiController.class
+com/example/controller/PatientController.class
+com/example/utils/RandomUtils.class
+com/example/entity/UserEntity.class
+com/example/entity/SleepQuality.class
+com/example/generator/PatientGenerator.class
+com/example/entity/Illness.class
+com/example/repository/PatientRepository.class
+com/example/service/PatientService.class
+com/example/entity/PatientEntity.class
