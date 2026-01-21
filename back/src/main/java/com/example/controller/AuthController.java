@@ -14,7 +14,6 @@ public class AuthController {
 
     private final UserRepository userRepository;
 
-    // Inject the repository (Database Tool)
     public AuthController(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -26,10 +25,8 @@ public class AuthController {
 
         Map<String, Object> response = new HashMap<>();
 
-        // 1. Ask Database: "Do we have a user with this name?"
         Optional<UserEntity> userInDb = userRepository.findByUsername(username);
 
-        // 2. Check if User exists AND Password matches
         if (userInDb.isPresent() && userInDb.get().getPassword().equals(password)) {
             response.put("success", true);
             response.put("message", "Login successful (Validated by PostgreSQL Database!)");
