@@ -3,6 +3,7 @@ package com.example.generator;
 import com.example.entity.*;
 import com.example.utils.RandomUtils;
 import java.util.SplittableRandom;
+import java.time.LocalDate;
 
 public class PatientGenerator {
 
@@ -28,7 +29,6 @@ public class PatientGenerator {
         p.setHeightCm(round(height));
         p.setWeightKg(round(weight));
 
-
         AthleticismLevel athleticismLevel = RandomUtils.pick(AthleticismLevel.values(), rng);
         p.setAthleticism(athleticismLevel.getLevel());
         
@@ -38,9 +38,19 @@ public class PatientGenerator {
         p.setSmoker(rng.nextDouble() < 0.25);
         p.setDrinker(rng.nextDouble() < 0.40);
 
-        p.setBpmMax(180 - (p.getAthleticism() * 5) + rng.nextInt(10));
+        p.setBpmMax(180 - (athleticismLevel.getLevel() * 5) + rng.nextInt(10));
 
         p.setName(NameGenerator.randomName(rng));
+
+        int ageInYears = 18 + rng.nextInt(63);
+        p.setBirthDate(LocalDate.now().minusYears(ageInYears).minusDays(rng.nextInt(365)));
+
+        String[] activityStates = {"RESTING", "WALKING", "RUNNING", "EXERCISING"};
+        p.setCurrentActivityState(activityStates[rng.nextInt(activityStates.length)]);
+
+        p.setTrackingEnabled(true);
+
+        p.setUserId(null);
 
         return p;
     }

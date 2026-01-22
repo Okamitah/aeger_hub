@@ -53,11 +53,13 @@
 
         <div v-if="patients.length > 0">
           <h4>Patients ({{ patients.length }} total)</h4>
-          <table>
+          <table border="1">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Name</th>
+                <th>Birth Date</th>
+                <th>Age</th>
                 <th>Sex</th>
                 <th>Height (cm)</th>
                 <th>Weight (kg)</th>
@@ -65,15 +67,19 @@
                 <th>Illness</th>
                 <th>Sleep Quality</th>
                 <th>Athleticism</th>
+                <th>Activity State</th>
                 <th>Smoker</th>
                 <th>Drinker</th>
                 <th>BPM Max</th>
+                <th>Tracking</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="patient in patients" :key="patient.id">
                 <td>{{ patient.id }}</td>
                 <td>{{ patient.name }}</td>
+                <td>{{ patient.birthDate || 'N/A' }}</td>
+                <td>{{ calculateAge(patient.birthDate) }}</td>
                 <td>{{ patient.sex }}</td>
                 <td>{{ patient.heightCm.toFixed(1) }}</td>
                 <td>{{ patient.weightKg.toFixed(1) }}</td>
@@ -81,9 +87,11 @@
                 <td>{{ patient.illness }}</td>
                 <td>{{ patient.sleepQuality }}</td>
                 <td>{{ patient.athleticism }}</td>
+                <td>{{ patient.currentActivityState || 'N/A' }}</td>
                 <td>{{ patient.smoker ? '✓' : '✗' }}</td>
                 <td>{{ patient.drinker ? '✓' : '✗' }}</td>
                 <td>{{ patient.bpmMax }}</td>
+                <td>{{ patient.trackingEnabled ? '✓' : '✗' }}</td>
               </tr>
             </tbody>
           </table>
@@ -208,5 +216,17 @@ async function loadPatients() {
 function calculateBMI(patient) {
   const heightInMeters = patient.heightCm / 100
   return patient.weightKg / (heightInMeters * heightInMeters)
+}
+
+function calculateAge(birthDate) {
+  if (!birthDate) return 'N/A'
+  const birth = new Date(birthDate)
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  return age
 }
 </script>
