@@ -34,7 +34,8 @@ public class PatientEntity {
 
     private LocalDate birthDate;
     
-    private String currentActivityState;
+    @Enumerated(EnumType.STRING)
+    private ActivityState currentActivityState;
     
     private boolean trackingEnabled = true;
 
@@ -137,11 +138,11 @@ public class PatientEntity {
         this.birthDate = birthDate;
     }
 
-    public String getCurrentActivityState() {
+    public ActivityState getCurrentActivityState() {
         return currentActivityState;
     }
 
-    public void setCurrentActivityState(String currentActivityState) {
+    public void setCurrentActivityState(ActivityState currentActivityState) {
         this.currentActivityState = currentActivityState;
     }
 

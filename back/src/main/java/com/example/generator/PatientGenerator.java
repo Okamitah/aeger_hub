@@ -42,11 +42,10 @@ public class PatientGenerator {
 
         p.setName(NameGenerator.randomName(rng));
 
-        int ageInYears = 18 + rng.nextInt(63);
+        int ageInYears = 18 + rng.nextInt(63); // 18 to 80
         p.setBirthDate(LocalDate.now().minusYears(ageInYears).minusDays(rng.nextInt(365)));
 
-        String[] activityStates = {"RESTING", "WALKING", "RUNNING", "EXERCISING"};
-        p.setCurrentActivityState(activityStates[rng.nextInt(activityStates.length)]);
+        p.setCurrentActivityState(RandomUtils.pick(ActivityState.values(), rng));
 
         p.setTrackingEnabled(true);
 
