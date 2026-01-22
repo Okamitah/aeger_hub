@@ -2,14 +2,13 @@ package com.example;
 
 import com.example.entity.UserEntity;
 import com.example.repository.UserRepository;
+import com.example.service.MealService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableScheduling
 public class AegerHubApplication {
 
     public static void main(String[] args) {
@@ -17,13 +16,17 @@ public class AegerHubApplication {
     }
 
     @Bean
-    CommandLineRunner initDatabase(UserRepository repository) {
+    CommandLineRunner initDatabase(UserRepository userRepository, MealService mealService) {
         return args -> {
-            if (repository.findByUsername("admin").isEmpty()) {
-                System.out.println("--- DATABASE TEST: Creating default user 'admin' ---");
-                repository.save(new UserEntity("admin", "secret"));
-                System.out.println("--- DATABASE TEST: User 'admin' saved successfully! ---");
+            if (userRepository.findByUsername("admin").isEmpty()) {
+                System.out.println("--- DATABASE: Creating default user 'admin' ---");
+                userRepository.save(new UserEntity("admin", "secret"));
+                System.out.println("--- DATABASE: User 'admin' created! ---");
             }
+            
+            System.out.println("--- DATABASE: Initializing meal recommendations ---");
+            mealService.initializeMealDatabase();
+            System.out.println("--- DATABASE: Meal database initialized! ---");
         };
     }
 }

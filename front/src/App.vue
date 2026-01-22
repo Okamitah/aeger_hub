@@ -77,6 +77,7 @@
                 <th>Drinker</th>
                 <th>BPM Max</th>
                 <th>Tracking</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -97,6 +98,9 @@
                 <td>{{ patient.drinker ? '✓' : '✗' }}</td>
                 <td>{{ patient.bpmMax }}</td>
                 <td>{{ patient.trackingEnabled ? '✓' : '✗' }}</td>
+                <td>
+                  <button @click="viewMealPlan(patient)">View Meal Plan</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -105,12 +109,27 @@
           No patients in database. Generate some patients to get started!
         </div>
       </div>
+
+      <!-- Meal Recommendations Section -->
+      <div v-if="selectedPatient">
+        <hr>
+        <h3>Meal Plan for {{ selectedPatient.name }}</h3>
+        <p>Condition: <strong>{{ selectedPatient.illness }}</strong></p>
+        <button @click="selectedPatient = null">Close Meal Plan</button>
+        
+        <MealRecommendations 
+          v-if="selectedPatient.illness" 
+          :illness="selectedPatient.illness" 
+          :token="jwtToken" 
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import MealRecommendations from './MealRecommendations.vue'
 
 const healthStatus = ref('Checking...')
 const username = ref('')
@@ -126,6 +145,7 @@ const isGenerating = ref(false)
 const isLoading = ref(false)
 const generationMessage = ref('')
 const errorDetails = ref('')
+const selectedPatient = ref(null)
 
 onMounted(async () => {
   const storedToken = localStorage.getItem('jwt_token')
@@ -194,6 +214,7 @@ function logout() {
   patients.value = []
   generationMessage.value = ''
   errorDetails.value = ''
+  selectedPatient.value = null
   
   localStorage.removeItem('jwt_token')
   localStorage.removeItem('username')
@@ -216,18 +237,12 @@ async function generatePatients() {
       ? '/patients/mock' 
       : `/patients/mock/${patientCount.value}`
     
-    console.log('Calling endpoint:', endpoint)
-    
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: getAuthHeaders()
     })
     
-    console.log('Response status:', res.status)
-    
     if (res.ok) {
-      const data = await res.json()
-      console.log('Generated patients:', data)
       generationMessage.value = `Successfully generated ${patientCount.value} patient(s)!`
       await loadPatients()
     } else if (res.status === 401 || res.status === 403) {
@@ -235,13 +250,11 @@ async function generatePatients() {
       logout()
     } else {
       const errorText = await res.text()
-      console.error('Error response:', errorText)
       errorDetails.value = `Status: ${res.status}\n${errorText}`
       throw new Error('Generation failed')
     }
   } catch (error) {
-    console.error('Generation error:', error)
-    generationMessage.value = 'Error generating patients - check console for details'
+    generationMessage.value = 'Error generating patients'
     if (!errorDetails.value) {
       errorDetails.value = error.message
     }
@@ -256,34 +269,34 @@ async function loadPatients() {
   errorDetails.value = ''
   
   try {
-    console.log('Loading patients...')
     const res = await fetch('/patients', {
       headers: getAuthHeaders()
     })
-    console.log('Load patients response status:', res.status)
     
     if (res.ok) {
       const data = await res.json()
-      console.log('Loaded patients:', data)
       patients.value = data
     } else if (res.status === 401 || res.status === 403) {
       generationMessage.value = 'Authentication failed. Please log in again.'
       logout()
     } else {
       const errorText = await res.text()
-      console.error('Error loading patients:', errorText)
       errorDetails.value = `Status: ${res.status}\n${errorText}`
       throw new Error('Failed to load patients')
     }
   } catch (error) {
-    console.error('Load error:', error)
-    generationMessage.value = 'Error loading patients - check console for details'
+    generationMessage.value = 'Error loading patients'
     if (!errorDetails.value) {
       errorDetails.value = error.message
     }
   } finally {
     isLoading.value = false
   }
+}
+
+function viewMealPlan(patient) {
+  selectedPatient.value = patient
+  window.scrollTo(0, document.body.scrollHeight)
 }
 
 function calculateBMI(patient) {
