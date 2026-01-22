@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/patients")
-@CrossOrigin(origins = {"http://localhost:5173", "http://172.31.249.107"})
+@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class PatientController {
 
     private final PatientService service;
