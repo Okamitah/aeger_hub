@@ -11,7 +11,8 @@ public class NameGenerator {
         "Emily", "Daniel", "Elizabeth", "Matthew", "Sofia", "Jackson", "Avery",
         "Sebastian", "Ella", "Jack", "Scarlett", "Aiden", "Grace", "Owen", "Chloe",
         "Samuel", "Victoria", "Joseph", "Riley", "John", "Aria", "David", "Lily",
-        "Wyatt", "Aubrey", "Carter", "Zoey", "Julian"
+        "Wyatt", "Aubrey", "Carter", "Zoey", "Julian", "Omar", "Mohamed", "Mamadou", 
+        "Mehdi", "Bilal", "Hatim", "Ismail"
     };
     
     private static final String[] LAST_NAMES = {

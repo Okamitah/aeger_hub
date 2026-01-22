@@ -48,7 +48,12 @@
         </div>
 
         <div v-if="generationMessage">
-          {{ generationMessage }}
+          <strong>{{ generationMessage }}</strong>
+        </div>
+
+        <div v-if="errorDetails">
+          <p>Error details:</p>
+          <pre>{{ errorDetails }}</pre>
         </div>
 
         <div v-if="patients.length > 0">
@@ -81,9 +86,9 @@
                 <td>{{ patient.birthDate || 'N/A' }}</td>
                 <td>{{ calculateAge(patient.birthDate) }}</td>
                 <td>{{ patient.sex }}</td>
-                <td>{{ patient.heightCm.toFixed(1) }}</td>
-                <td>{{ patient.weightKg.toFixed(1) }}</td>
-                <td>{{ calculateBMI(patient).toFixed(1) }}</td>
+                <td>{{ patient.heightCm ? patient.heightCm.toFixed(1) : 'N/A' }}</td>
+                <td>{{ patient.weightKg ? patient.weightKg.toFixed(1) : 'N/A' }}</td>
+                <td>{{ patient.heightCm && patient.weightKg ? calculateBMI(patient).toFixed(1) : 'N/A' }}</td>
                 <td>{{ patient.illness }}</td>
                 <td>{{ patient.sleepQuality }}</td>
                 <td>{{ patient.athleticism }}</td>
@@ -113,14 +118,25 @@ const password = ref('')
 const isLoggingIn = ref(false)
 const loginError = ref('')
 const isLoggedIn = ref(false)
+const jwtToken = ref('')
 
 const patients = ref([])
 const patientCount = ref(5)
 const isGenerating = ref(false)
 const isLoading = ref(false)
 const generationMessage = ref('')
+const errorDetails = ref('')
 
 onMounted(async () => {
+  const storedToken = localStorage.getItem('jwt_token')
+  const storedUsername = localStorage.getItem('username')
+  
+  if (storedToken && storedUsername) {
+    jwtToken.value = storedToken
+    username.value = storedUsername
+    isLoggedIn.value = true
+  }
+
   try {
     const res = await fetch('/api/')
     if (res.ok) {
@@ -131,6 +147,10 @@ onMounted(async () => {
     }
   } catch {
     healthStatus.value = 'Offline'
+  }
+
+  if (isLoggedIn.value) {
+    await loadPatients()
   }
 })
 
@@ -147,14 +167,20 @@ async function handleLogin() {
             })
         })
         const data = await res.json()
-        if (data.success) {
+        if (data.success && data.token) {
             isLoggedIn.value = true
+            jwtToken.value = data.token
+            username.value = data.username
+            
+            localStorage.setItem('jwt_token', data.token)
+            localStorage.setItem('username', data.username)
+            
             await loadPatients()
         } else {
             loginError.value = data.message || 'Login failed'
         }
-    } catch {
-        loginError.value = 'Network error'
+    } catch (err) {
+        loginError.value = 'Network error: ' + err.message
     } finally {
         isLoggingIn.value = false
     }
@@ -162,33 +188,63 @@ async function handleLogin() {
 
 function logout() {
   isLoggedIn.value = false
+  jwtToken.value = ''
   username.value = ''
   password.value = ''
   patients.value = []
+  generationMessage.value = ''
+  errorDetails.value = ''
+  
+  localStorage.removeItem('jwt_token')
+  localStorage.removeItem('username')
+}
+
+function getAuthHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${jwtToken.value}`
+  }
 }
 
 async function generatePatients() {
   isGenerating.value = true
-  generationMessage.value = ''
+  generationMessage.value = 'Generating patients...'
+  errorDetails.value = ''
   
   try {
     const endpoint = patientCount.value === 1 
       ? '/patients/mock' 
       : `/patients/mock/${patientCount.value}`
     
+    console.log('Calling endpoint:', endpoint)
+    
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     })
     
+    console.log('Response status:', res.status)
+    
     if (res.ok) {
+      const data = await res.json()
+      console.log('Generated patients:', data)
       generationMessage.value = `Successfully generated ${patientCount.value} patient(s)!`
       await loadPatients()
+    } else if (res.status === 401 || res.status === 403) {
+      generationMessage.value = 'Authentication failed. Please log in again.'
+      logout()
     } else {
+      const errorText = await res.text()
+      console.error('Error response:', errorText)
+      errorDetails.value = `Status: ${res.status}\n${errorText}`
       throw new Error('Generation failed')
     }
   } catch (error) {
-    generationMessage.value = 'Error generating patients'
+    console.error('Generation error:', error)
+    generationMessage.value = 'Error generating patients - check console for details'
+    if (!errorDetails.value) {
+      errorDetails.value = error.message
+    }
   } finally {
     isGenerating.value = false
   }
@@ -197,23 +253,41 @@ async function generatePatients() {
 async function loadPatients() {
   isLoading.value = true
   generationMessage.value = ''
+  errorDetails.value = ''
   
   try {
-    const res = await fetch('/patients')
+    console.log('Loading patients...')
+    const res = await fetch('/patients', {
+      headers: getAuthHeaders()
+    })
+    console.log('Load patients response status:', res.status)
+    
     if (res.ok) {
       const data = await res.json()
+      console.log('Loaded patients:', data)
       patients.value = data
+    } else if (res.status === 401 || res.status === 403) {
+      generationMessage.value = 'Authentication failed. Please log in again.'
+      logout()
     } else {
+      const errorText = await res.text()
+      console.error('Error loading patients:', errorText)
+      errorDetails.value = `Status: ${res.status}\n${errorText}`
       throw new Error('Failed to load patients')
     }
   } catch (error) {
-    generationMessage.value = 'Error loading patients'
+    console.error('Load error:', error)
+    generationMessage.value = 'Error loading patients - check console for details'
+    if (!errorDetails.value) {
+      errorDetails.value = error.message
+    }
   } finally {
     isLoading.value = false
   }
 }
 
 function calculateBMI(patient) {
+  if (!patient.heightCm || !patient.weightKg) return 0
   const heightInMeters = patient.heightCm / 100
   return patient.weightKg / (heightInMeters * heightInMeters)
 }

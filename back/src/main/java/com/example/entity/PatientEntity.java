@@ -37,7 +37,7 @@ public class PatientEntity {
     @Enumerated(EnumType.STRING)
     private ActivityState currentActivityState;
     
-    private boolean trackingEnabled = true;
+    private boolean trackingEnabled = false;
 
     @Column(name = "user_id")
     private Long userId;
