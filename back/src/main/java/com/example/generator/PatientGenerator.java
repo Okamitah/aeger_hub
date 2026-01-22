@@ -47,7 +47,7 @@ public class PatientGenerator {
 
         p.setCurrentActivityState(RandomUtils.pick(ActivityState.values(), rng));
 
-        p.setTrackingEnabled(true);
+        // p.setTrackingEnabled(true);
 
         p.setUserId(null);
 
