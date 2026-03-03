@@ -19,13 +19,12 @@ pipeline {
         BACK_IMAGE  = "okamitah/aeger-hub-deploy-backend"
         
         INTEGRATION_USER = "toto"
-        INTEGRATION_IP = "172.31.249.107"
-        
-        //TEST_USER = "toto"
-        //TEST_IP = ""
-        
-        PROD_USER = "toto"
-        PROD_IP = "172.31.252.3"
+        INTEGRATION_IP   = "172.31.249.107"
+
+        PROD_USER     = "toto"
+        PROD_FRONT_IP = "172.31.250.122"
+        PROD_BACK_IP  = "172.31.250.181"
+        PROD_DB_IP    = "172.31.249.186"
     }
 
     stages {
@@ -61,7 +60,7 @@ pipeline {
             }
             steps {
                 dir('front') {
-                    sh 'rm -rf dist' 
+                    sh 'rm -rf dist'
                     sh 'npm ci'
                     sh 'export NODE_OPTIONS="--max_old_space_size=1024" && npm run build'
                 }
@@ -116,60 +115,87 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    def deployUser = ''
-                    def deployIP = ''
-                    def dbPassword = ''
-                    
-                    switch(params.ENVIRONMENT) {
-                        case 'integration':
-                            deployUser = env.INTEGRATION_USER
-                            deployIP = env.INTEGRATION_IP
-                            dbPassword = 'aeger'
-                            break
-                        case 'test':
-                            deployUser = env.TEST_USER
-                            deployIP = env.TEST_IP
-                            dbPassword = 'test_password'
-                            break
-                        case 'prod':
-                            deployUser = env.PROD_USER
-                            deployIP = env.PROD_IP
-                            dbPassword = credentials('prod-db-password')
-                            break
-                    }
-                    
                     sshagent(['integration-server-key']) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${deployUser}@${deployIP} '
-                            docker network create aeger-net 2>/dev/null || true
+                        if (params.ENVIRONMENT == 'integration') {
+                            def dbPassword = 'aeger'
 
-                            docker pull $BACK_IMAGE:${ENVIRONMENT}
-                            docker pull $FRONT_IMAGE:${ENVIRONMENT}
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${env.INTEGRATION_USER}@${env.INTEGRATION_IP} '
+                                    docker network create aeger-net 2>/dev/null || true
 
-                            docker stop postgres-db backend frontend 2>/dev/null || true
-                            docker rm postgres-db backend frontend 2>/dev/null || true
+                                    docker pull $BACK_IMAGE:${ENVIRONMENT}
+                                    docker pull $FRONT_IMAGE:${ENVIRONMENT}
 
-                            docker run -d --name postgres-db --network aeger-net \\
-                            -v /home/${deployUser}/aeger_db_data:/var/lib/postgresql/data \\
-                            -e POSTGRES_DB=aeger_hub_db \\
-                            -e POSTGRES_USER=aeger \\
-                            -e POSTGRES_PASSWORD=${dbPassword} \\
-                            postgres:15
+                                    docker stop postgres-db backend frontend 2>/dev/null || true
+                                    docker rm postgres-db backend frontend 2>/dev/null || true
 
-                            sleep 10
+                                    docker run -d --name postgres-db --network aeger-net \\
+                                        -v /home/${env.INTEGRATION_USER}/aeger_db_data:/var/lib/postgresql/data \\
+                                        -e POSTGRES_DB=aeger_hub_db \\
+                                        -e POSTGRES_USER=aeger \\
+                                        -e POSTGRES_PASSWORD=${dbPassword} \\
+                                        postgres:15
 
-                            docker run -d --name backend --network aeger-net -p 8080:8080 \\
-                            -e SPRING_PROFILES_ACTIVE=${MAVEN_PROFILE} \\
-                            -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/aeger_hub_db \\
-                            -e SPRING_DATASOURCE_USERNAME=aeger \\
-                            -e SPRING_DATASOURCE_PASSWORD=${dbPassword} \\
-                            $BACK_IMAGE:${ENVIRONMENT}
+                                    sleep 10
 
-                            docker run -d --name frontend --network aeger-net -p 80:80 \\
-                            --add-host=host.docker.internal:host-gateway \\
-                            $FRONT_IMAGE:${ENVIRONMENT}
-                            '
+                                    docker run -d --name backend --network aeger-net -p 8080:8080 \\
+                                        -e SPRING_PROFILES_ACTIVE=${MAVEN_PROFILE} \\
+                                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/aeger_hub_db \\
+                                        -e SPRING_DATASOURCE_USERNAME=aeger \\
+                                        -e SPRING_DATASOURCE_PASSWORD=${dbPassword} \\
+                                        $BACK_IMAGE:${ENVIRONMENT}
+
+                                    docker run -d --name frontend --network aeger-net -p 80:80 \\
+                                        --add-host=host.docker.internal:host-gateway \\
+                                        $FRONT_IMAGE:${ENVIRONMENT}
+                                '
                             """
+
+                        } else if (params.ENVIRONMENT == 'prod') {
+                            def dbPassword = credentials('prod-db-password')
+
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_DB_IP} '
+                                    docker stop postgres-db 2>/dev/null || true
+                                    docker rm postgres-db 2>/dev/null || true
+
+                                    docker run -d --name postgres-db -p 5432:5432 \\
+                                        -v /home/${env.PROD_USER}/aeger_db_data:/var/lib/postgresql/data \\
+                                        -e POSTGRES_DB=aeger_hub_db \\
+                                        -e POSTGRES_USER=aeger \\
+                                        -e POSTGRES_PASSWORD=${dbPassword} \\
+                                        postgres:15
+                                '
+                            """
+
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_BACK_IP} '
+                                    docker pull $BACK_IMAGE:${ENVIRONMENT}
+
+                                    docker stop backend 2>/dev/null || true
+                                    docker rm backend 2>/dev/null || true
+
+                                    docker run -d --name backend -p 8080:8080 \\
+                                        -e SPRING_PROFILES_ACTIVE=${MAVEN_PROFILE} \\
+                                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://${env.PROD_DB_IP}:5432/aeger_hub_db \\
+                                        -e SPRING_DATASOURCE_USERNAME=aeger \\
+                                        -e SPRING_DATASOURCE_PASSWORD=${dbPassword} \\
+                                        $BACK_IMAGE:${ENVIRONMENT}
+                                '
+                            """
+
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_FRONT_IP} '
+                                    docker pull $FRONT_IMAGE:${ENVIRONMENT}
+
+                                    docker stop frontend 2>/dev/null || true
+                                    docker rm frontend 2>/dev/null || true
+
+                                    docker run -d --name frontend -p 80:80 \\
+                                        $FRONT_IMAGE:${ENVIRONMENT}
+                                '
+                            """
+                        }
                     }
                 }
             }
