@@ -4,13 +4,8 @@ pipeline {
     parameters {
         choice(
             name: 'ENVIRONMENT',
-            choices: ['integration', 'test', 'prod'],
+            choices: ['integration', 'prod'],
             description: 'Select deployment environment'
-        )
-        choice(
-            name: 'MAVEN_PROFILE',
-            choices: ['integration', 'test', 'prod'],
-            description: 'Maven build profile'
         )
     }
 
@@ -27,7 +22,7 @@ pipeline {
         PROD_DB_IP    = "172.31.252.33"
     }
 
-    stages {
+stages {
         stage('Clean Workspace') {
             steps {
                 deleteDir()
@@ -85,7 +80,7 @@ pipeline {
             }
             steps {
                 dir('back') {
-                    sh "mvn clean package -P${MAVEN_PROFILE} -U"
+                    sh "mvn clean package -U"
                 }
             }
         }
@@ -117,84 +112,82 @@ pipeline {
                 script {
                     sshagent(['integration-server-key']) {
                         if (params.ENVIRONMENT == 'integration') {
-                            def dbPassword = 'aeger'
 
                             sh """
                                 ssh -o StrictHostKeyChecking=no ${env.INTEGRATION_USER}@${env.INTEGRATION_IP} '
                                     docker network create aeger-net 2>/dev/null || true
 
-                                    docker pull $BACK_IMAGE:${ENVIRONMENT}
-                                    docker pull $FRONT_IMAGE:${ENVIRONMENT}
+                                    docker pull $BACK_IMAGE:integration
+                                    docker pull $FRONT_IMAGE:integration
 
                                     docker stop postgres-db backend frontend 2>/dev/null || true
                                     docker rm postgres-db backend frontend 2>/dev/null || true
 
                                     docker run -d --name postgres-db --network aeger-net \\
-                                        -v /home/${env.INTEGRATION_USER}/aeger_db_data:/var/lib/postgresql/data \\
+                                        -v /home/toto/aeger_db_data:/var/lib/postgresql/data \\
                                         -e POSTGRES_DB=aeger_hub_db \\
                                         -e POSTGRES_USER=aeger \\
-                                        -e POSTGRES_PASSWORD=${dbPassword} \\
+                                        -e POSTGRES_PASSWORD=aeger \\
                                         postgres:15
 
                                     sleep 10
 
                                     docker run -d --name backend --network aeger-net -p 8080:8080 \\
-                                        -e SPRING_PROFILES_ACTIVE=${MAVEN_PROFILE} \\
                                         -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/aeger_hub_db \\
                                         -e SPRING_DATASOURCE_USERNAME=aeger \\
-                                        -e SPRING_DATASOURCE_PASSWORD=${dbPassword} \\
-                                        $BACK_IMAGE:${ENVIRONMENT}
+                                        -e SPRING_DATASOURCE_PASSWORD=aeger \\
+                                        $BACK_IMAGE:integration
 
                                     docker run -d --name frontend --network aeger-net -p 80:80 \\
                                         --add-host=host.docker.internal:host-gateway \\
-                                        $FRONT_IMAGE:${ENVIRONMENT}
+                                        $FRONT_IMAGE:integration
                                 '
                             """
 
                         } else if (params.ENVIRONMENT == 'prod') {
-                            def dbPassword = credentials('prod-db-password')
+                            withCredentials([string(credentialsId: 'prod-db-password', variable: 'DB_PASS')]) {
 
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_DB_IP} '
-                                    docker stop postgres-db 2>/dev/null || true
-                                    docker rm postgres-db 2>/dev/null || true
+                                sh """
+                                    ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_DB_IP} '
+                                        docker stop postgres-db 2>/dev/null || true
+                                        docker rm postgres-db 2>/dev/null || true
 
-                                    docker run -d --name postgres-db -p 5432:5432 \\
-                                        -v /home/${env.PROD_USER}/aeger_db_data:/var/lib/postgresql/data \\
-                                        -e POSTGRES_DB=aeger_hub_db \\
-                                        -e POSTGRES_USER=aeger \\
-                                        -e POSTGRES_PASSWORD=${dbPassword} \\
-                                        postgres:15
-                                '
-                            """
+                                        docker run -d --name postgres-db -p 5432:5432 \\
+                                            -v /home/toto/aeger_db_data:/var/lib/postgresql/data \\
+                                            -e POSTGRES_DB=aeger_hub_db \\
+                                            -e POSTGRES_USER=aeger \\
+                                            -e POSTGRES_PASSWORD=${DB_PASS} \\
+                                            postgres:15
+                                    '
+                                """
 
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_BACK_IP} '
-                                    docker pull $BACK_IMAGE:${ENVIRONMENT}
+                                sh """
+                                    ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_BACK_IP} '
+                                        docker pull $BACK_IMAGE:prod
 
-                                    docker stop backend 2>/dev/null || true
-                                    docker rm backend 2>/dev/null || true
+                                        docker stop backend 2>/dev/null || true
+                                        docker rm backend 2>/dev/null || true
 
-                                    docker run -d --name backend -p 8080:8080 \\
-                                        -e SPRING_PROFILES_ACTIVE=${MAVEN_PROFILE} \\
-                                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://${env.PROD_DB_IP}:5432/aeger_hub_db \\
-                                        -e SPRING_DATASOURCE_USERNAME=aeger \\
-                                        -e SPRING_DATASOURCE_PASSWORD=${dbPassword} \\
-                                        $BACK_IMAGE:${ENVIRONMENT}
-                                '
-                            """
+                                        docker run -d --name backend -p 8080:8080 \\
+                                            -e SPRING_DATASOURCE_URL=jdbc:postgresql://${env.PROD_DB_IP}:5432/aeger_hub_db \\
+                                            -e SPRING_DATASOURCE_USERNAME=aeger \\
+                                            -e SPRING_DATASOURCE_PASSWORD=${DB_PASS} \\
+                                            $BACK_IMAGE:prod
+                                    '
+                                """
 
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_FRONT_IP} '
-                                    docker pull $FRONT_IMAGE:${ENVIRONMENT}
+                                sh """
+                                    ssh -o StrictHostKeyChecking=no ${env.PROD_USER}@${env.PROD_FRONT_IP} '
+                                        docker pull $FRONT_IMAGE:prod
 
-                                    docker stop frontend 2>/dev/null || true
-                                    docker rm frontend 2>/dev/null || true
+                                        docker stop frontend 2>/dev/null || true
+                                        docker rm frontend 2>/dev/null || true
 
-                                    docker run -d --name frontend -p 80:80 \\
-                                        $FRONT_IMAGE:${ENVIRONMENT}
-                                '
-                            """
+                                        docker run -d --name frontend -p 80:80 \\
+                                            $FRONT_IMAGE:prod
+                                    '
+                                """
+                            }
                         }
                     }
                 }
