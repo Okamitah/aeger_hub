@@ -94,62 +94,61 @@ pipeline {
             }
         }
 
-        stage('Deploy Database') {
-            steps {
-                sshagent(['integration-server-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DB_IP} '
-                            docker stop postgres-db 2>/dev/null || true
-                            docker rm postgres-db 2>/dev/null || true
+    stage('Deploy Database') {
+        steps {
+            withCredentials([string(credentialsId: 'prod-server-password', variable: 'SSH_PASS')]) {
+                sh """
+                    sshpass -p '${SSH_PASS}' ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DB_IP} '
+                    docker stop postgres-db 2>/dev/null || true
+                    docker rm postgres-db 2>/dev/null || true
 
-                            docker run -d --name postgres-db -p 5432:5432 \\
-                                -v /home/toto/aeger_db_data:/var/lib/postgresql/data \\
-                                -e POSTGRES_DB=aeger_hub_db \\
-                                -e POSTGRES_USER=aeger \\
-                                -e POSTGRES_PASSWORD=aeger \\
-                                postgres:15
-                        '
+                    docker run -d --name postgres-db -p 5432:5432 \\
+                    -v /home/toto/aeger_db_data:/var/lib/postgresql/data \\
+                    -e POSTGRES_DB=aeger_hub_db \\
+                    -e POSTGRES_USER=aeger \\
+                    -e POSTGRES_PASSWORD=aeger \\
+                    postgres:15
+                    '
                     """
-                }
             }
         }
+    }
 
-        stage('Deploy Backend') {
-            steps {
-                sshagent(['integration-server-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.BACK_IP} '
-                            docker pull $BACK_IMAGE:latest
+    stage('Deploy Backend') {
+        steps {
+            withCredentials([string(credentialsId: 'prod-server-password', variable: 'SSH_PASS')]) {
+                sh """
+                    sshpass -p '${SSH_PASS}' ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.BACK_IP} '
+                    docker pull $BACK_IMAGE:latest
 
-                            docker stop backend 2>/dev/null || true
-                            docker rm backend 2>/dev/null || true
+                    docker stop backend 2>/dev/null || true
+                    docker rm backend 2>/dev/null || true
 
-                            docker run -d --name backend -p 8080:8080 \\
-                                -e SPRING_DATASOURCE_URL=jdbc:postgresql://${env.DB_IP}:5432/aeger_hub_db \\
-                                -e SPRING_DATASOURCE_USERNAME=aeger \\
-                                -e SPRING_DATASOURCE_PASSWORD=aeger \\
-                                $BACK_IMAGE:latest
-                        '
+                    docker run -d --name backend -p 8080:8080 \\
+                    -e SPRING_DATASOURCE_URL=jdbc:postgresql://${env.DB_IP}:5432/aeger_hub_db \\
+                    -e SPRING_DATASOURCE_USERNAME=aeger \\
+                    -e SPRING_DATASOURCE_PASSWORD=aeger \\
+                    $BACK_IMAGE:latest
+                    '
                     """
-                }
             }
         }
+    }
 
-        stage('Deploy Frontend') {
-            steps {
-                sshagent(['integration-server-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.FRONT_IP} '
-                            docker pull $FRONT_IMAGE:latest
+    stage('Deploy Frontend') {
+        steps {
+            withCredentials([string(credentialsId: 'prod-server-password', variable: 'SSH_PASS')]) {
+                sh """
+                    sshpass -p '${SSH_PASS}' ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.FRONT_IP} '
+                    docker pull $FRONT_IMAGE:latest
 
-                            docker stop frontend 2>/dev/null || true
-                            docker rm frontend 2>/dev/null || true
+                    docker stop frontend 2>/dev/null || true
+                    docker rm frontend 2>/dev/null || true
 
-                            docker run -d --name frontend -p 80:80 \\
-                                $FRONT_IMAGE:latest
-                        '
+                    docker run -d --name frontend -p 80:80 \\
+                    $FRONT_IMAGE:latest
+                    '
                     """
-                }
             }
         }
     }
