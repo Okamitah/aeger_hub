@@ -19,12 +19,12 @@ pipeline {
         BACK_IMAGE  = "okamitah/aeger-hub-deploy-backend"
         
         INTEGRATION_USER = "toto"
-        INTEGRATION_IP   = "172.31.249.107"
+        INTEGRATION_IP   = "172.31.250.95"
 
         PROD_USER     = "toto"
-        PROD_FRONT_IP = "172.31.250.122"
-        PROD_BACK_IP  = "172.31.250.181"
-        PROD_DB_IP    = "172.31.249.186"
+        PROD_FRONT_IP = "172.31.253.126"
+        PROD_BACK_IP  = "172.31.253.155"
+        PROD_DB_IP    = "172.31.252.33"
     }
 
     stages {
