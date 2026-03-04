@@ -145,10 +145,11 @@ pipeline {
                     docker stop frontend 2>/dev/null || true
                     docker rm frontend 2>/dev/null || true
 
-                    docker run -d --name frontend -p 80:80 \\
-                    $FRONT_IMAGE:latest
-                    '
-                    """
+                        docker run -d --name frontend -p 80:80 \\
+                        $FRONT_IMAGE:latest
+                        '
+                        """
+                }
             }
         }
     }
