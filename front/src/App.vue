@@ -110,6 +110,68 @@
         </div>
       </div>
 
+      <div>
+        <h3>Doctor Generator</h3>
+
+        <div>
+          <label>
+            Number of doctors to generate:
+            <input
+              v-model.number="doctorCount"
+              type="number"
+              min="1"
+              max="100"
+            />
+          </label>
+
+          <button @click="generateDoctors" :disabled="isDoctorGenerating">
+            {{ isDoctorGenerating ? 'Generating...' : 'Generate Doctors' }}
+          </button>
+
+          <button @click="loadDoctors" :disabled="isDoctorLoading">
+            {{ isDoctorLoading ? 'Loading...' : 'Refresh Doctor List' }}
+          </button>
+        </div>
+
+        <div v-if="doctorGenerationMessage">
+          <strong>{{ doctorGenerationMessage }}</strong>
+        </div>
+
+        <div v-if="doctorErrorDetails">
+          <p>Error details:</p>
+          <pre>{{ doctorErrorDetails }}</pre>
+        </div>
+
+        <div v-if="doctors.length > 0">
+          <h4>Doctors ({{ doctors.length }} total)</h4>
+          <table border="1">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Sex</th>
+                <th>Specialty</th>
+                <th>Years of Experience</th>
+                <th>Hospital</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="doctor in doctors" :key="doctor.id">
+                <td>{{ doctor.id }}</td>
+                <td>{{ doctor.name }}</td>
+                <td>{{ doctor.sex }}</td>
+                <td>{{ doctor.specialty }}</td>
+                <td>{{ doctor.yearsOfExperience }}</td>
+                <td>{{ doctor.hospital }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else-if="!isDoctorLoading">
+          No doctors in database. Generate some doctors to get started!
+        </div>
+      </div>
+
       <!-- Meal Recommendations Section -->
       <div v-if="selectedPatient">
         <hr>
@@ -147,6 +209,13 @@ const generationMessage = ref('')
 const errorDetails = ref('')
 const selectedPatient = ref(null)
 
+const doctors = ref([])
+const doctorCount = ref(5)
+const isDoctorGenerating = ref(false)
+const isDoctorLoading = ref(false)
+const doctorGenerationMessage = ref('')
+const doctorErrorDetails = ref('')
+
 onMounted(async () => {
   const storedToken = localStorage.getItem('jwt_token')
   const storedUsername = localStorage.getItem('username')
@@ -171,6 +240,7 @@ onMounted(async () => {
 
   if (isLoggedIn.value) {
     await loadPatients()
+    await loadDoctors()
   }
 })
 
@@ -196,6 +266,7 @@ async function handleLogin() {
             localStorage.setItem('username', data.username)
             
             await loadPatients()
+            await loadDoctors()
         } else {
             loginError.value = data.message || 'Login failed'
         }
@@ -212,8 +283,11 @@ function logout() {
   username.value = ''
   password.value = ''
   patients.value = []
+  doctors.value = []
   generationMessage.value = ''
   errorDetails.value = ''
+  doctorGenerationMessage.value = ''
+  doctorErrorDetails.value = ''
   selectedPatient.value = null
   
   localStorage.removeItem('jwt_token')
@@ -226,6 +300,7 @@ function getAuthHeaders() {
     'Authorization': `Bearer ${jwtToken.value}`
   }
 }
+
 
 async function generatePatients() {
   isGenerating.value = true
@@ -293,6 +368,75 @@ async function loadPatients() {
     isLoading.value = false
   }
 }
+
+
+async function generateDoctors() {
+  isDoctorGenerating.value = true
+  doctorGenerationMessage.value = 'Generating doctors...'
+  doctorErrorDetails.value = ''
+
+  try {
+    const endpoint = doctorCount.value === 1
+      ? '/doctors/mock'
+      : `/doctors/mock/${doctorCount.value}`
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    })
+
+    if (res.ok) {
+      doctorGenerationMessage.value = `Successfully generated ${doctorCount.value} doctor(s)!`
+      await loadDoctors()
+    } else if (res.status === 401 || res.status === 403) {
+      doctorGenerationMessage.value = 'Authentication failed. Please log in again.'
+      logout()
+    } else {
+      const errorText = await res.text()
+      doctorErrorDetails.value = `Status: ${res.status}\n${errorText}`
+      throw new Error('Generation failed')
+    }
+  } catch (error) {
+    doctorGenerationMessage.value = 'Error generating doctors'
+    if (!doctorErrorDetails.value) {
+      doctorErrorDetails.value = error.message
+    }
+  } finally {
+    isDoctorGenerating.value = false
+  }
+}
+
+async function loadDoctors() {
+  isDoctorLoading.value = true
+  doctorGenerationMessage.value = ''
+  doctorErrorDetails.value = ''
+
+  try {
+    const res = await fetch('/doctors', {
+      headers: getAuthHeaders()
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      doctors.value = data
+    } else if (res.status === 401 || res.status === 403) {
+      doctorGenerationMessage.value = 'Authentication failed. Please log in again.'
+      logout()
+    } else {
+      const errorText = await res.text()
+      doctorErrorDetails.value = `Status: ${res.status}\n${errorText}`
+      throw new Error('Failed to load doctors')
+    }
+  } catch (error) {
+    doctorGenerationMessage.value = 'Error loading doctors'
+    if (!doctorErrorDetails.value) {
+      doctorErrorDetails.value = error.message
+    }
+  } finally {
+    isDoctorLoading.value = false
+  }
+}
+
 
 function viewMealPlan(patient) {
   selectedPatient.value = patient
