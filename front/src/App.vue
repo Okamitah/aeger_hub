@@ -172,7 +172,8 @@
         </div>
       </div>
 
-      <!-- Meal Recommendations Section -->
+      <AlimentManager :token="jwtToken" />
+
       <div v-if="selectedPatient">
         <hr>
         <h3>Meal Plan for {{ selectedPatient.name }}</h3>
@@ -192,6 +193,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import MealRecommendations from './MealRecommendations.vue'
+import AlimentManager from './AlimentManager.vue'
 
 const healthStatus = ref('Checking...')
 const username = ref('')
