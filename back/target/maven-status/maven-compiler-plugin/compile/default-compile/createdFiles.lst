@@ -1,5 +1,6 @@
 com/example/entity/DoctorEntity.class
 com/example/entity/Sex.class
+com/example/service/AlimentService.class
 com/example/service/BpmSimulationService.class
 com/example/controller/AuthController.class
 com/example/controller/ApiController.class
@@ -10,6 +11,7 @@ com/example/entity/MealType.class
 com/example/generator/PatientGenerator.class
 com/example/entity/Illness.class
 com/example/repository/MealRepository.class
+com/example/entity/AlimentEntity.class
 com/example/entity/PatientEntity.class
 com/example/security/JwtRequestFilter.class
 com/example/generator/NameGenerator.class
@@ -22,6 +24,7 @@ com/example/entity/Meal.class
 com/example/entity/BpmEntity.class
 com/example/entity/AthleticismLevel.class
 com/example/service/DoctorService.class
+com/example/client/OpenFoodFactsClient.class
 com/example/controller/MealController.class
 com/example/repository/BpmRepository.class
 com/example/repository/DoctorRepository.class
@@ -29,7 +32,9 @@ com/example/controller/DoctorController.class
 com/example/controller/PatientController.class
 com/example/config/WebConfig.class
 com/example/entity/UserEntity.class
+com/example/controller/AlimentController.class
 com/example/entity/SleepQuality.class
+com/example/repository/AlimentRepository.class
 com/example/repository/PatientRepository.class
 com/example/service/PatientService.class
 com/example/security/SecurityConfig.class

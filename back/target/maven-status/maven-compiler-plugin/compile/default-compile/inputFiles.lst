@@ -1,11 +1,14 @@
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/AegerHubApplication.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/client/OpenFoodFactsClient.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/config/WebConfig.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/AlimentController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/ApiController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/AuthController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/DoctorController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/MealController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/controller/PatientController.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/ActivityState.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/AlimentEntity.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/AthleticismLevel.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/BpmEntity.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/entity/DoctorEntity.java
@@ -19,6 +22,7 @@
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/generator/DoctorGenerator.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/generator/NameGenerator.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/generator/PatientGenerator.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/repository/AlimentRepository.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/repository/BpmRepository.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/repository/DoctorRepository.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/repository/MealRepository.java
@@ -27,6 +31,7 @@
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/security/JwtRequestFilter.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/security/JwtUtil.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/security/SecurityConfig.java
+/home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/service/AlimentService.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/service/BpmSimulationService.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/service/DoctorService.java
 /home/okamitah/Projects/aeger_hub/back/src/main/java/com/example/service/MealService.java
