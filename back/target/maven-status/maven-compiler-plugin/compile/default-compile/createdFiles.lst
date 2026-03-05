@@ -22,6 +22,7 @@ com\example\AegerHubApplication.class
 com\example\entity\AlimentEntity.class
 com\example\repository\PatientRepository.class
 com\example\entity\AthleticismLevel.class
+com\example\service\TrackingPolicy$1.class
 com\example\security\JwtRequestFilter.class
 com\example\repository\DoctorRepository.class
 com\example\controller\MealController.class

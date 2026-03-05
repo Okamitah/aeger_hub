@@ -5,6 +5,7 @@ import com.example.generator.PatientGenerator;
 import com.example.repository.PatientRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,5 +37,25 @@ public class PatientService {
             results.add(repo.save(generator.generate()));
         }
         return results;
+    }
+
+    public PatientEntity toggleTracking(Long id) {
+        PatientEntity patient = repo.findById(id).orElse(null);
+        if (patient == null)
+            return null;
+
+        boolean enabling = !patient.isTrackingEnabled();
+        patient.setTrackingEnabled(enabling);
+
+        if (enabling) {
+            patient.setTrackingEnabledSince(LocalDate.now());
+            int duration = TrackingPolicy.periodicCheckDurationDays(patient);
+            int interval = TrackingPolicy.periodicCheckIntervalDays(patient);
+            patient.setNextPeriodicCheck(LocalDate.now().plusDays(duration + interval));
+        } else {
+            patient.setTrackingEnabledSince(null);
+        }
+
+        return repo.save(patient);
     }
 }

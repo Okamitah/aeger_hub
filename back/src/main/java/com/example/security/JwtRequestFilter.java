@@ -1,5 +1,6 @@
 package com.example.security;
 
+import com.example.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,9 +17,11 @@ import java.util.ArrayList;
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
-    public JwtRequestFilter(JwtUtil jwtUtil) {
+    public JwtRequestFilter(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
     }
 
     @Override

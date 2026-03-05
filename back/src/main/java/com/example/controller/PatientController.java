@@ -12,7 +12,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/patients")
-@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+@CrossOrigin(origins = "*", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE,
+        RequestMethod.OPTIONS })
 public class PatientController {
 
     private final PatientService service;
@@ -38,16 +39,21 @@ public class PatientController {
         return service.createMany(count);
     }
 
+    @PutMapping("/{id}/tracking")
+    public ResponseEntity<PatientEntity> toggleTracking(@PathVariable Long id) {
+        PatientEntity patient = service.toggleTracking(id);
+        if (patient == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(patient);
+    }
+
     @GetMapping("/{id}/recommendations")
     public ResponseEntity<?> getAlimentRecommendations(@PathVariable Long id) {
         PatientEntity patient = service.getById(id);
-        if (patient == null) {
+        if (patient == null)
             return ResponseEntity.notFound().build();
-        }
-
-        Map<String, List<AlimentEntity>> grouped =
-                recommendationService.getRecommendedAlimentsGrouped(patient.getIllness());
-
+        Map<String, List<AlimentEntity>> grouped = recommendationService
+                .getRecommendedAlimentsGrouped(patient.getIllness());
         return ResponseEntity.ok(grouped);
     }
 }
