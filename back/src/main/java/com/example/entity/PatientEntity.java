@@ -33,11 +33,15 @@ public class PatientEntity {
     private int bpmMax;
 
     private LocalDate birthDate;
-    
+
     @Enumerated(EnumType.STRING)
     private ActivityState currentActivityState;
-    
+
     private boolean trackingEnabled = false;
+
+    private LocalDate trackingEnabledSince;
+
+    private LocalDate nextPeriodicCheck;
 
     @Column(name = "user_id")
     private Long userId;
@@ -152,6 +156,22 @@ public class PatientEntity {
 
     public void setTrackingEnabled(boolean trackingEnabled) {
         this.trackingEnabled = trackingEnabled;
+    }
+
+    public LocalDate getTrackingEnabledSince() {
+        return trackingEnabledSince;
+    }
+
+    public void setTrackingEnabledSince(LocalDate trackingEnabledSince) {
+        this.trackingEnabledSince = trackingEnabledSince;
+    }
+
+    public LocalDate getNextPeriodicCheck() {
+        return nextPeriodicCheck;
+    }
+
+    public void setNextPeriodicCheck(LocalDate nextPeriodicCheck) {
+        this.nextPeriodicCheck = nextPeriodicCheck;
     }
 
     public Long getUserId() {

@@ -35,13 +35,27 @@ public class BpmSimulationService {
                 continue;
 
             int calculatedBpm = calculateBpm(patient);
+            bpmRepository.save(new BpmEntity(LocalDateTime.now(), patient, calculatedBpm));
 
             if (calculatedBpm > patient.getBpmMax()) {
-                System.out.println(
-                        "WARNING: Patient " + patient.getName() + " exceeded max BPM! Value: " + calculatedBpm);
+                System.out.println("[BpmSimulation] WARNING: " + patient.getName()
+                        + " exceeded max BPM! value=" + calculatedBpm
+                        + " max=" + patient.getBpmMax());
+                extendTrackingOnAnomaly(patient);
             }
+        }
+    }
 
-            bpmRepository.save(new BpmEntity(LocalDateTime.now(), patient, calculatedBpm));
+    private void extendTrackingOnAnomaly(PatientEntity patient) {
+        LocalDate extended = LocalDate.now().plusDays(
+                TrackingPolicy.continuousTrackingDays(patient));
+        if (patient.getNextPeriodicCheck() == null || patient.getNextPeriodicCheck().isBefore(extended)) {
+            patient.setTrackingEnabledSince(LocalDate.now());
+            patient.setNextPeriodicCheck(extended.plusDays(
+                    TrackingPolicy.periodicCheckIntervalDays(patient)));
+            patientRepository.save(patient);
+            System.out.println("[BpmSimulation] Extended tracking for " + patient.getName()
+                    + " until " + patient.getNextPeriodicCheck());
         }
     }
 
@@ -51,9 +65,8 @@ public class BpmSimulationService {
 
         baseBpm -= (patient.getAthleticism() * 2);
 
-        if (patient.isSmoker()) {
+        if (patient.isSmoker())
             baseBpm += 7;
-        }
 
         switch (patient.getSleepQuality()) {
             case POOR:
