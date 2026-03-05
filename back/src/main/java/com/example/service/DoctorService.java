@@ -5,8 +5,8 @@ import com.example.generator.DoctorGenerator;
 import com.example.repository.DoctorRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
 @Service
 public class DoctorService {
@@ -27,9 +27,10 @@ public class DoctorService {
     }
 
     public List<DoctorEntity> createMany(int count) {
-        return IntStream.range(0, count)
-                .mapToObj(i -> generator.generate())
-                .map(repo::save)
-                .toList();
+        List<DoctorEntity> results = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            results.add(repo.save(generator.generate()));
+        }
+        return results;
     }
 }

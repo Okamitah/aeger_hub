@@ -23,6 +23,7 @@ export default defineConfig({
       '/aliments': 'http://localhost:8080',
       '/meals': 'http://localhost:8080',
       '/blood-tests': 'http://localhost:8080',
+      '/bpm': 'http://localhost:8080',
     }
   }
 })

@@ -67,12 +67,19 @@
                 <th>Drinker</th>
                 <th>BPM Max</th>
                 <th>Tracking</th>
+                <th>BPM History</th>
                 <th>Blood Test</th>
                 <th>Meal Plan</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="patient in patients" :key="patient.id" :class="{ 'row-active': selectedBloodPatient && selectedBloodPatient.id === patient.id }">
+              <tr
+                v-for="patient in patients"
+                :key="patient.id"
+                :class="{
+                  'row-active': (selectedBloodPatient && selectedBloodPatient.id === patient.id) || (selectedBpmPatient && selectedBpmPatient.id === patient.id)
+                }"
+              >
                 <td class="mono">{{ patient.id }}</td>
                 <td>{{ patient.name }}</td>
                 <td>{{ patient.birthDate || 'N/A' }}</td>
@@ -89,6 +96,16 @@
                 <td>{{ patient.drinker ? '✓' : '✗' }}</td>
                 <td>{{ patient.bpmMax }}</td>
                 <td>{{ patient.trackingEnabled ? '✓' : '✗' }}</td>
+                <td>
+                  <button
+                    class="btn-bpm"
+                    @click="viewBpmHistory(patient)"
+                    :disabled="!patient.trackingEnabled"
+                    :title="!patient.trackingEnabled ? 'Tracking not enabled for this patient' : ''"
+                  >
+                    {{ bpmLoadingId === patient.id ? '…' : patient.trackingEnabled ? '📈 View' : '—' }}
+                  </button>
+                </td>
                 <td>
                   <button
                     class="btn-accent"
@@ -159,12 +176,91 @@
           <h3>Meal Plan — {{ selectedPatient.name }}</h3>
           <button class="btn-ghost" @click="selectedPatient = null">✕ Close</button>
         </div>
-        <p>Condition: <strong>{{ selectedPatient.illness }}</strong></p>
+        <p class="panel-sub">Condition: <strong>{{ selectedPatient.illness }}</strong></p>
         <MealRecommendations
           v-if="selectedPatient.illness"
           :illness="selectedPatient.illness"
           :token="jwtToken"
         />
+      </div>
+
+      <!-- BPM HISTORY -->
+      <div v-if="selectedBpmPatient" ref="bpmPanel" class="panel bpm-panel">
+        <div class="panel-header">
+          <h3>📈 BPM History — {{ selectedBpmPatient.name }}</h3>
+          <div class="panel-header-actions">
+            <button class="btn-ghost" @click="loadBpmHistory(selectedBpmPatient)">↺ Refresh</button>
+            <button class="btn-ghost" @click="selectedBpmPatient = null; bpmHistory = []">✕ Close</button>
+          </div>
+        </div>
+
+        <div v-if="bpmHistory.length > 0" class="bpm-content">
+          <div class="bpm-stats">
+            <div class="bpm-stat">
+              <div class="bpm-stat-label">Latest</div>
+              <div class="bpm-stat-value" :class="getBpmStatusClass(bpmHistory[0].value, selectedBpmPatient)">
+                {{ bpmHistory[0].value }} <span class="bpm-unit">bpm</span>
+              </div>
+            </div>
+            <div class="bpm-stat">
+              <div class="bpm-stat-label">Average</div>
+              <div class="bpm-stat-value">{{ bpmAvg }} <span class="bpm-unit">bpm</span></div>
+            </div>
+            <div class="bpm-stat">
+              <div class="bpm-stat-label">Min</div>
+              <div class="bpm-stat-value low">{{ bpmMin }} <span class="bpm-unit">bpm</span></div>
+            </div>
+            <div class="bpm-stat">
+              <div class="bpm-stat-label">Max</div>
+              <div class="bpm-stat-value" :class="bpmMax > selectedBpmPatient.bpmMax ? 'high' : 'normal'">
+                {{ bpmMax }} <span class="bpm-unit">bpm</span>
+              </div>
+            </div>
+            <div class="bpm-stat">
+              <div class="bpm-stat-label">Max Allowed</div>
+              <div class="bpm-stat-value">{{ selectedBpmPatient.bpmMax }} <span class="bpm-unit">bpm</span></div>
+            </div>
+            <div class="bpm-stat">
+              <div class="bpm-stat-label">Records</div>
+              <div class="bpm-stat-value">{{ bpmHistory.length }}</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Timestamp</th>
+                  <th>BPM Value</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(entry, index) in bpmHistory.slice(0, 50)" :key="entry.id">
+                  <td class="mono">{{ index + 1 }}</td>
+                  <td class="mono">{{ formatDateTime(entry.timestamp) }}</td>
+                  <td>
+                    <span class="bpm-badge" :class="getBpmStatusClass(entry.value, selectedBpmPatient)">
+                      {{ entry.value }} bpm
+                    </span>
+                  </td>
+                  <td>
+                    <span class="blood-status-badge" :class="getBpmStatusClass(entry.value, selectedBpmPatient)">
+                      {{ getBpmStatusLabel(entry.value, selectedBpmPatient) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-if="bpmHistory.length > 50" class="bpm-truncate">
+            Showing 50 most recent of {{ bpmHistory.length }} total records.
+          </div>
+        </div>
+
+        <div v-else-if="bpmLoadingId === selectedBpmPatient.id" class="empty">Loading BPM history…</div>
+        <div v-else class="empty">No BPM records found. Make sure tracking is enabled and the scheduler has run.</div>
       </div>
 
       <!-- BLOOD TEST RESULTS -->
@@ -203,7 +299,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import MealRecommendations from './MealRecommendations.vue'
 import AlimentManager from './AlimentManager.vue'
 
@@ -234,6 +330,19 @@ const selectedBloodPatient = ref(null)
 const bloodTestResult = ref(null)
 const bloodTestLoadingId = ref(null)
 const bloodPanel = ref(null)
+
+const selectedBpmPatient = ref(null)
+const bpmHistory = ref([])
+const bpmLoadingId = ref(null)
+const bpmPanel = ref(null)
+
+const bpmAvg = computed(() => {
+  if (!bpmHistory.value.length) return 0
+  const sum = bpmHistory.value.reduce((acc, e) => acc + e.value, 0)
+  return Math.round(sum / bpmHistory.value.length)
+})
+const bpmMin = computed(() => bpmHistory.value.length ? Math.min(...bpmHistory.value.map(e => e.value)) : 0)
+const bpmMax = computed(() => bpmHistory.value.length ? Math.max(...bpmHistory.value.map(e => e.value)) : 0)
 
 const bloodMarkers = [
   {
@@ -351,6 +460,18 @@ function getMarkerLabel(marker, result, patient) {
   return '✓ Normal'
 }
 
+function getBpmStatusClass(value, patient) {
+  if (value > patient.bpmMax) return 'high'
+  if (value < 40) return 'low'
+  return 'normal'
+}
+
+function getBpmStatusLabel(value, patient) {
+  if (value > patient.bpmMax) return '↑ Exceeded'
+  if (value < 40) return '↓ Low'
+  return '✓ Normal'
+}
+
 function formatValue(v) {
   if (v == null) return 'N/A'
   return Number(v).toFixed(2)
@@ -431,6 +552,8 @@ function logout() {
   selectedPatient.value = null
   selectedBloodPatient.value = null
   bloodTestResult.value = null
+  selectedBpmPatient.value = null
+  bpmHistory.value = []
   localStorage.removeItem('jwt_token')
   localStorage.removeItem('username')
 }
@@ -535,6 +658,29 @@ async function loadDoctors() {
   }
 }
 
+async function viewBpmHistory(patient) {
+  selectedBpmPatient.value = patient
+  bpmHistory.value = []
+  await loadBpmHistory(patient)
+}
+
+async function loadBpmHistory(patient) {
+  bpmLoadingId.value = patient.id
+  try {
+    const res = await fetch(`/bpm/patient/${patient.id}`, { headers: getAuthHeaders() })
+    if (res.ok) {
+      const data = await res.json()
+      bpmHistory.value = data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      await nextTick()
+      bpmPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  } catch (error) {
+    bpmHistory.value = []
+  } finally {
+    bpmLoadingId.value = null
+  }
+}
+
 async function generateBloodTest(patient) {
   bloodTestLoadingId.value = patient.id
   selectedBloodPatient.value = patient
@@ -548,8 +694,6 @@ async function generateBloodTest(patient) {
       bloodTestResult.value = await res.json()
       await nextTick()
       bloodPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    } else {
-      bloodTestResult.value = null
     }
   } catch (error) {
     bloodTestResult.value = null
@@ -666,7 +810,6 @@ function calculateAge(birthDate) {
 
 .main-content {
   padding: 28px 28px 60px;
-  max-width: 1800px;
 }
 
 .top-bar {
@@ -724,9 +867,7 @@ function calculateAge(birthDate) {
   outline: none;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
+.table-wrap { overflow-x: auto; }
 
 table {
   width: 100%;
@@ -734,9 +875,7 @@ table {
   font-size: 12px;
 }
 
-thead tr {
-  background: #0f1219;
-}
+thead tr { background: #0f1219; }
 
 th {
   padding: 10px 14px;
@@ -759,9 +898,7 @@ td {
 }
 
 tr:last-child td { border-bottom: none; }
-
 tr:hover td { background: #161a24; }
-
 tr.row-active td { background: #0f1a2e; }
 
 .mono {
@@ -857,6 +994,21 @@ tr.row-active td { background: #0f1a2e; }
 .btn-accent:hover:not(:disabled) { background: #2e1065; border-color: #7c3aed; color: #c4b5fd; }
 .btn-accent:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.btn-bpm {
+  background: #0d1f2d;
+  color: #38bdf8;
+  border: 1px solid #0c4a6e;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-bpm:hover:not(:disabled) { background: #0c2d42; border-color: #0284c7; color: #7dd3fc; }
+.btn-bpm:disabled { opacity: 0.3; cursor: not-allowed; }
+
 .panel {
   background: #13161f;
   border: 1px solid #1e2330;
@@ -879,16 +1031,97 @@ tr.row-active td { background: #0f1a2e; }
   color: #e2e8f0;
 }
 
-.blood-panel {
-  border-color: #2e1a4a;
+.panel-header-actions {
+  display: flex;
+  gap: 8px;
 }
+
+.panel-sub {
+  padding: 12px 20px;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 1px solid #1e2330;
+}
+
+.panel-sub strong { color: #c8cdd8; }
+
+.bpm-panel { border-color: #0c3352; }
+
+.bpm-content {}
+
+.bpm-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1px;
+  background: #1e2330;
+  border-bottom: 1px solid #1e2330;
+}
+
+.bpm-stat {
+  background: #13161f;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bpm-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.bpm-stat-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.bpm-unit {
+  font-size: 10px;
+  color: #4b5563;
+  font-weight: 400;
+}
+
+.bpm-stat-value.high { color: #f87171; }
+.bpm-stat-value.low  { color: #60a5fa; }
+.bpm-stat-value.normal { color: #34d399; }
+
+.bpm-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 0;
+}
+.bpm-badge.high { color: #f87171; }
+.bpm-badge.low  { color: #60a5fa; }
+.bpm-badge.normal { color: #9ca3af; }
+
+.bpm-truncate {
+  padding: 10px 20px;
+  font-size: 11px;
+  color: #4b5563;
+  font-style: italic;
+  border-top: 1px solid #1e2330;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.blood-panel { border-color: #2e1a4a; }
 
 .blood-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1px;
   background: #1e2330;
-  border-top: none;
 }
 
 .blood-card {
@@ -918,7 +1151,6 @@ tr.row-active td { background: #0f1a2e; }
   align-items: baseline;
   gap: 4px;
 }
-
 .blood-value.high { color: #f87171; }
 .blood-value.low  { color: #60a5fa; }
 .blood-value.normal { color: #34d399; }
