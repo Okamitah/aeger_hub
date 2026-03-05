@@ -22,6 +22,10 @@ public class PatientService {
         return repo.findAll();
     }
 
+    public PatientEntity getById(Long id) {
+        return repo.findById(id).orElse(null);
+    }
+
     public PatientEntity createMock() {
         return repo.save(generator.generate());
     }
