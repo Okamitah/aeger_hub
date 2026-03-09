@@ -4,11 +4,11 @@ pipeline {
     environment {
         FRONT_IMAGE = "okamitah/aeger-hub-deploy-frontend"
         BACK_IMAGE  = "okamitah/aeger-hub-deploy-backend"
-        
-        DEPLOY_USER = "toto"
-        FRONT_IP    = "172.31.253.126"
-        BACK_IP     = "172.31.253.155"
-        DB_IP       = "172.31.252.33"
+
+        DEPLOY_USER = "aeger"
+        FRONT_IP    = "172.31.252.230"
+        BACK_IP     = "172.31.250.14"
+        DB_IP       = "172.31.249.21"
     }
 
     stages {
